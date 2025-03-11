@@ -60,3 +60,52 @@ gapRemover <- function(rast, nPix){
 }
 
 
+####4) reTiler ####
+VectorTiler <- function(rast, grid, dir){
+  #This function takes in a raster and retiles it with a grid, and makes spatvectors out of them
+  #and loads them into the right folder
+  library(terra)
+  
+  #Create directory based on input
+  dir.create(dir, recursive = TRUE)
+  
+  #retile the raster 
+  makeTiles(spr_gapRemoved, grid, paste(dir,"tile_.tif", sep = "/"))
+  
+  #List the folder with the tiles
+  tile_list <- list.files(dir,
+                          full.names = TRUE)
+  
+  #load them in as spatraster
+  sprList_tiles <- map(tile_list, terra::rast)
+  
+  #Create a function to polygonize them
+  polygonize_fun <- function(x){
+    vec <- as.polygons(x)
+    
+    return(vec)
+  }
+  
+  #Polygonize all the spatrasters and make t
+  svc_DeerPaths <- map(sprList_tiles, polygonize_fun)
+  
+  #Give them names
+  names(svc_DeerPaths) <-paste0("tile_", 1:36)
+
+  #remove the folder again
+  unlink(paste(dir, "*", sep = "/"))
+  
+  #Save as geopackages
+    # Ensure the output directory exists
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive = TRUE)
+    }
+    
+    # Loop through each SpatVector in the list and write to a file
+    for (name in names(spat_list)) {
+      filepath <- file.path(dir, paste0(name, ".gpkg"))
+      writeVector(spat_list[[name]], filepath)
+      message("Saved: ", filepath)
+    }
+  }
+  
