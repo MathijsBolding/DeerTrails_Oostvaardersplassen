@@ -24,18 +24,23 @@ gridMaker <- function(x, cellLength){
 }
 
 ####2) trackAreaCalculator #####
-trackAreaCalculator <- function(spr, pixelSize, grid){
+trackAreaCalculator <- function(spr, pixelSize = 0.01){
   #Calculate the area of deertracks based on the pixel size(m^2)
   library(terra)
+  
+  #Make sure grid is a vector
+  #sv_grid <- vect(grid)
   
   #Set all the NA's to zero 
   spr[is.na(spr)] <- 0
   
+
   #Set all the pixels to the pixel size 
-  spr[spr_DeerTracks != 0] <- pixelSize
+  spr[spr[[1]] != 0] <- pixelSize
+  
   
   #use terra zonal to sum all the pixels per grid cell
-  spr_PathArea <- terra::zonal(spr, grid,
+  spr_PathArea <- terra::zonal(spr, as.polygons(ext(spr)),
                                fun = "sum", as.raster = TRUE)
   
   return(spr_PathArea)
@@ -60,17 +65,18 @@ gapRemover <- function(rast, nPix){
 }
 
 
-####4) reTiler ####
+####4) Vector Tiler ####
 VectorTiler <- function(rast, grid, dir){
   #This function takes in a raster and retiles it with a grid, and makes spatvectors out of them
   #and loads them into the right folder
+  #NOT COMPLETE YET
   library(terra)
   
   #Create directory based on input
   dir.create(dir, recursive = TRUE)
   
   #retile the raster 
-  makeTiles(spr_gapRemoved, grid, paste(dir,"tile_.tif", sep = "/"))
+  makeTiles(rast, grid, paste(dir,"tile_.tif", sep = "/"))
   
   #List the folder with the tiles
   tile_list <- list.files(dir,
@@ -89,7 +95,7 @@ VectorTiler <- function(rast, grid, dir){
   #Polygonize all the spatrasters and make t
   svc_DeerPaths <- map(sprList_tiles, polygonize_fun)
   
-  #Give them names
+  #Give them names 
   names(svc_DeerPaths) <-paste0("tile_", 1:36)
 
   #remove the folder again
@@ -108,4 +114,40 @@ VectorTiler <- function(rast, grid, dir){
       message("Saved: ", filepath)
     }
   }
+  
+####4) Raster Tiler ####
+RasterTiler <- function(rast, grid, dir = "temp", rm = TRUE){
+  #This function takes in a raster and retiles it with a grid
+  #Standard directory is temp, select rm = FALSE if you want to keep 
+  #the folder
+  library(terra)
+  
+  #Create directory based on input
+  dir.create(dir, recursive = TRUE)
+  
+  #retile the raster 
+  makeTiles(rast, grid, paste(dir,"tile_.tif", sep = "/"))
+  
+  #List the folder with the tiles
+  tile_list <- list.files(dir,
+                          full.names = TRUE)
+  
+  #load them in as spatraster
+  sprList_tiles <- map(tile_list, terra::rast)
+  
+
+  if(rm == TRUE){
+    #remove the folder again
+    unlink(dir, 
+           recursive = TRUE)
+    
+    #return output
+    return(sprList_tiles)
+    
+  }else 
+    
+    #return output without removed files
+    return(sprList_tiles)
+  
+}
   
