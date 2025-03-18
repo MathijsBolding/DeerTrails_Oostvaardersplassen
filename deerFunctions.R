@@ -150,7 +150,7 @@ RasterTiler <- function(rast, grid, dir = "temp", rm = FALSE){
 }
 
 #### 5) Batchprocessor function#####
-batchProcesser_v2 <- function(tile, outputName = "output/fragRast.tif"){
+batchProcesser_v2 <- function(tile, outputName = "PathSizeRast.tif"){
   #This function runs the functions: gridMaker, RasterTiler and trackAreaCalculator.  
   #Then it combines all the spatrasters into one big .tif
   
@@ -178,7 +178,7 @@ batchProcesser_v2 <- function(tile, outputName = "output/fragRast.tif"){
 }
 
 ####6) PatchBatchCalculator#####
-PatchBatchCalculator <- function(tile){
+PatchBatchCalculator <- function(tile, outputName = "MeanPatchSize.tif"){
   #This function takes in a tile with deer paths and calculates
   #the mean patch area for the tile of 100m x 100m
   
@@ -222,9 +222,9 @@ PatchBatchCalculator <- function(tile){
     merge()
   
   #Write the output just in case
-  writeRaster(meanPatchRast,
-              "output/meanPatchSize2_0.tif")
+  writeRaster(meanPatchRast, outputName)
   
   return(meanPatchRast)
   
 }
+
