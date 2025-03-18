@@ -1,6 +1,6 @@
 #This file consist of all the functions that make it past
 #the scratch phase.
-#import with this command: source("C:/Internship/Rscripts/testScriptFragmentation.R")
+#import with this command: source("C:/Internship/Rscripts/deerFunctions.R")
 ####1) gridMaker #####
 gridMaker <- function(x, cellLength){
   #This function takes in a raster/vec and makes a grid based on the extent
@@ -17,10 +17,7 @@ gridMaker <- function(x, cellLength){
   #Set unique values
   values(spr_grid) = 1:ncell(spr_grid)
   
-  #make it polygons
-  sv_grid <- as.polygons(spr_grid)
-  
-  return(sv_grid)
+  return(spr_grid)
 }
 
 ####2) trackAreaCalculator #####
@@ -116,7 +113,7 @@ VectorTiler <- function(rast, grid, dir){
   }
   
 ####4) Raster Tiler ####
-RasterTiler <- function(rast, grid, dir = "temp", rm = TRUE){
+RasterTiler <- function(rast, grid, dir = "temp", rm = FALSE){
   #This function takes in a raster and retiles it with a grid
   #Standard directory is temp, select rm = FALSE if you want to keep 
   #the folder
@@ -152,6 +149,7 @@ RasterTiler <- function(rast, grid, dir = "temp", rm = TRUE){
   
 }
 
+#### 5) Batchprocessor function#####
 batchProcesser_v2 <- function(tile, outputName = "output/fragRast.tif"){
   #This function runs the functions: gridMaker, RasterTiler and trackAreaCalculator.  
   #Then it combines all the spatrasters into one big .tif
@@ -175,6 +173,58 @@ batchProcesser_v2 <- function(tile, outputName = "output/fragRast.tif"){
   writeRaster(fragRast_x_x, outputName)
   
   #remove the tempory folder 
-  unlink("temp", recursive = TRUE)
+  #unlink("temp", recursive = TRUE)
+  
+}
+
+####6) PatchBatchCalculator#####
+PatchBatchCalculator <- function(tile){
+  #This function takes in a tile with deer paths and calculates
+  #the mean patch area for the tile of 100m x 100m
+  
+  #necessary libraries
+  library(terra)
+  library(landscapemetrics)
+  
+  #Make a grid using the gridmaker
+  grid_x_x <- gridMaker(tile, 100)
+  
+  #Make the tiles based on the 100m x 100m grid
+  sub_tiles <- RasterTiler(tile, grid_x_x, rm= FALSE)
+  
+  #Create the function to calculate the mean path csize
+  meanPatchCalculator <- function(x, y){
+    
+    #Set all the NA value's to zero (patches)
+    x[is.na(x)] <- 0
+    
+    #Set all the path area to NA
+    x[x[[1]] == 1] <- NA
+    
+    #Get the extent of the raster
+    extRast <- ext(x)
+    
+    #calculate area
+    meanArea <- lsm_l_area_mn(x)
+    
+    #create a rastercell with the value of the mean area
+    CellMean <- rast(vals = meanArea$value, ext = extRast, 
+                     ncols = 1, nrows = 1)
+    
+    return(CellMean)
+  }
+  
+  #Map it to calculate it for each cell 
+  meanPatchCellList <- map(sub_tiles, meanPatchCalculator) 
+  
+  #Merge the list to form one raster
+  meanPatchRast <- sprc(meanPatchCellList)%>%
+    merge()
+  
+  #Write the output just in case
+  writeRaster(meanPatchRast,
+              "output/meanPatchSize2_0.tif")
+  
+  return(meanPatchRast)
   
 }
