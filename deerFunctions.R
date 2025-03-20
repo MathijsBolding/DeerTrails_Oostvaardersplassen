@@ -25,21 +25,17 @@ trackAreaCalculator <- function(spr, pixelSize = 0.01){
   #Calculate the area of deertracks based on the pixel size(m^2)
   library(terra)
   
-  #Make sure grid is a vector
-  #sv_grid <- vect(grid)
-  
   #Set all the NA's to zero 
   spr[is.na(spr)] <- 0
   
-
+  
   #Set all the pixels to the pixel size 
   spr[spr[[1]] != 0] <- pixelSize
   
   
   #use terra zonal to sum all the pixels per grid cell
-  spr_PathArea <- terra::zonal(spr, as.polygons(ext(spr)),
-                               fun = "sum", as.raster = TRUE)
-  
+  spr_PathArea <- terra::aggregate(spr, fact = 500, fun = "sum",
+                                   cores = 12)
   return(spr_PathArea)
   
 }
