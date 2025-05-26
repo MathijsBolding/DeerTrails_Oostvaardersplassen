@@ -224,3 +224,123 @@ PatchBatchCalculator <- function(tile, outputName = "MeanPatchSize.tif"){
   
 }
 
+
+#### 7) Simple plot function ####
+plotFunction <- function(dat, x_var, y_var, scale = "normal"){
+  #This function creates a nice x-yplot to explore the data
+  
+  library(tidyverse)
+  #The function without a log scale 
+  ggplt <- ggplot(data =  dat, 
+                  mapping = aes(dat[,x_var], dat[,y_var]))+
+    geom_point()+
+    xlab(x_var)+
+    ylab(y_var)+
+    theme_bw(base_size = 15)+
+    theme(text = element_text(face="bold"))
+  
+  #Make if statement for log
+  if(scale == "log"){
+    ggplt  +
+      scale_x_log10()+
+      scale_y_log10()
+  }else
+    #return the ggplot without the axis in log scale
+    ggplt
+}
+
+#####8) Sample function #####
+sampleFun <- function(dat, n){
+  #This function takes a sample of size n and calculates the mean of the sample
+  #load in the library
+  library(tidyverse)
+  
+  #take the sample 
+  sample <- sample_n(dat, size = n)
+  
+  #Use summarize to summarize
+  sample_summarized <- summarize(sample, 
+                                 mean_value = mean(value))%>%
+    select(mean_value)
+  
+  
+  #return the summarized
+  return(sample_summarized)
+}
+
+#####9) TrailFractionCalculator #####
+
+#Create function to calcalate the proportion trails for a folder
+TrailFractionCalculator <- function(folder){
+  #This function loads in a whole folder of .xyz files and calculates the
+  # proportion of trail points in there
+  library(tidyverse)
+  
+  #load in the folder
+  list_files <- list.files(folder,
+                           pattern = "*xyz", full.names = TRUE)
+  head(list_files)
+  
+  #First store the names of the files
+  nameVector <- map(list_files, basename)%>%
+    as.data.frame()%>%
+    pivot_longer(cols = everything())%>%
+    select("value")
+  
+  #Debug print
+  print("nameVector Created")
+  
+  #Remove the .xyz 
+  nameVector <- str_sub(nameVector$value, end = -5)%>%
+    as.data.frame()
+  
+  #Now load in the .xyz data
+  list_XYZ<- map(list_files, read.table)
+  
+  #Create a function to calculate the fraction of paths for each file 
+  fractionCalculator <- function(list){
+    
+    #Select the fourth column
+    Trail_NoTrail <- list[4]
+    
+    #Count the total amount
+    count_Total <- count(Trail_NoTrail, name = "count_Total")
+    
+    #Count the trails
+    count_Trail <- Trail_NoTrail %>%
+      filter(Trail_NoTrail[1] == 1)%>%
+      count(name = "count_Trail")
+    
+    #Bind the columns of both 
+    list_TrailTotal <- bind_cols(count_Total, count_Trail)
+    
+    #Calculate the fraction 
+    list_TrailTotal$fraction_Trail <- list_TrailTotal$count_Trail/list_TrailTotal$count_Total
+    
+    #Select only the fraction to keep 
+    list_Fraction <- list_TrailTotal$fraction_Trail
+    
+    return(list_Fraction)
+  }
+  
+  #Iterate it over the complete list to calculate it as fraction 
+  list_TrailFraction <- map(list_XYZ, fractionCalculator)
+  
+  #make them a dataframe 
+  df_TrailFraction <- as.data.frame(list_TrailFraction)
+  
+  #Make the format long
+  df_TrailFractionLong <- pivot_longer(df_TrailFraction, 
+                                       cols_vary = "slowest",
+                                       cols = everything())%>%
+    select("value")
+  
+  #Bind with nameVector to get back the original names
+  df_TrailFractionLong <- bind_cols(nameVector, df_TrailFractionLong)
+  
+  #Set names
+  names(df_TrailFractionLong) <- c("Plot", "FractionTrails")
+  
+  return(df_TrailFractionLong)
+}
+
