@@ -1,0 +1,14 @@
+name: GeoScripter
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - geos
+  - pygeoops
+  - geopandas
+  - matplotlib
+  - shapely 
+  - laspy
+  - notebook
+  - pip
