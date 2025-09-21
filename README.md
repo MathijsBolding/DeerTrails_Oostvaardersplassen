@@ -17,20 +17,18 @@ As addition to the original workflow, the centerlines of the extracted trails ar
 
 ```plaintext
 Optimization/
-├── Environment             #Contains the yaml file needed to create the environment for the 2_Centerliner.py script.
-|
-├── 0_BatchRunner.sh         #Schell script that returns boxplots with performance metrics for a complete folder. 
-|  
-├── 1_xyz2polygon.R          # Script that converts the .xyz files to polygons using the Terra library
-│
-├── 2_Centerliner.py             # Script that extracts the centerline of the extracted deer polygons
-│
-├── 3_ConfusionMaker.R     # Script to calculate the confusion matrix
-│
-├── 4_BoxPlotter.R        # Script to plot the boxplots that are used to estimate the best parameters.
-│
-└── DeerFunctions.R     # Function library used in the R-scripts
+├── Environment/             # Contains the YAML file for the 2_Centerliner.py environment.
+├── 0_BatchRunner.sh         # Shell script that generates boxplots with performance metrics.
+├── 1_xyz2polygon.R          # Converts the extracted trails from rasters to polygons using the Terra library.
+├── 2_Centerliner.py         # Extracts the centerline of the polygonized trails.
+├── 3_ConfusionMaker.R       # Calculates the confusion matrix.
+├── 4_BoxPlotter.R           # Plots boxplots for parameter optimization.
+└── DeerFunctions.R          # Function library for R scripts.
 
+NetworkChangeDetection/     # Scripts for mapping and detecting changes in network structure.
+
+HandyFunctions/
+└── ConverterFunctions.ipynb  # Notebook with file conversion functions.
 ```
 
 ## Requirements
@@ -75,10 +73,8 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
    - Use the boxplots to identify the optimal parameter settings.
 
 ### Network Change Detection
-## Network Change Detection
  **Under Construction:** This section will include instructions for detecting and visualizing changes in trail networks.
  
-### Utilities 
 ## License
 
 This project is licensed under the **MIT License**.
