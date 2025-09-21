@@ -16,8 +16,7 @@ As addition to the original workflow, the centerlines of the extracted trails ar
 ## File Structure
 
 ```plaintext
-Optimization/
-├── Environment/             # Contains the YAML file for the 2_Centerliner.py environment.
+Optimization/         
 ├── 0_BatchRunner.sh         # Shell script that generates boxplots with performance metrics.
 ├── 1_xyz2polygon.R          # Converts the extracted trails from rasters to polygons using the Terra library.
 ├── 2_Centerliner.py         # Extracts the centerline of the polygonized trails.
@@ -25,7 +24,9 @@ Optimization/
 ├── 4_BoxPlotter.R           # Plots boxplots for parameter optimization.
 └── DeerFunctions.R          # Function library for R scripts.
 
-NetworkChangeDetection/     # Scripts for mapping and detecting changes in network structure.
+Environments/                # Contains the YAML file for the 2_Centerliner.py environment.
+
+NetworkChangeDetection/      # Scripts for mapping and detecting changes in network structure.
 
 HandyFunctions/
 └── ConverterFunctions.ipynb  # Notebook with file conversion functions.
