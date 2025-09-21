@@ -65,7 +65,8 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
 
    #List and load the manually validated polygons
    DO_ValidatedPolygons <- list.files(""dir-to-validatedcenterlines"",
-                                        full.names = TRUE)  map(vect)%>%
+                                        full.names = TRUE)%>%
+   map(vect)%>%
    svc()
    ```
 3. **Run the analysis:**
