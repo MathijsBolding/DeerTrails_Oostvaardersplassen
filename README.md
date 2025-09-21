@@ -1,4 +1,4 @@
-# deerTrails_Oostvaarders
+# DeerTrails_Oostvaardersplassen
 ## Table of Contents
 
 - [Overview](#overview)
