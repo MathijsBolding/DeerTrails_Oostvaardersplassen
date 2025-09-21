@@ -24,7 +24,8 @@ Optimization/
 ├── 4_BoxPlotter.R           # Plots boxplots for parameter optimization.
 └── DeerFunctions.R          # Function library for R scripts.
 
-Environments/                # Contains the YAML file for the 2_Centerliner.py environment.
+Environments/
+└──GeoScripter.yaml          # Contains the YAML file for the 2_Centerliner.py environment.
 
 NetworkChangeDetection/      # Scripts for mapping and detecting changes in network structure.
 
