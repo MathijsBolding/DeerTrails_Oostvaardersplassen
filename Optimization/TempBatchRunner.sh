@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Check if two arguments are provided
+# Check if one arguments is provided
 if [ "$#" -ne 1]; then
     echo "Usage: $0 input_folder final_output_folder"
     echo "Please provide both the initial input folder and ConfusionFileName"
@@ -47,7 +47,7 @@ fi
 	fi
 
 	echo "Running Centerline.py..."
-	python "$(dirname "$0")/2-centerliner.py" "$pol_folder" "$cen_folder"
+	python "$(dirname "$0")/2-Centerliner.py" "$pol_folder" "$cen_folder"
 	if [ $? -ne 0 ]; then
 	    echo "Error: Centerline.py failed."
 	    exit 1

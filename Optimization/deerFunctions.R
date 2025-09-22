@@ -369,7 +369,7 @@ xyz2rast <- function(xyz_file,
   library(terra)
   library(tidyverse)
   #load in the file list
-  ExtTrails <- read_table("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerOnly/Raster/Plot_3_dtm.xyz", col_names = FALSE) %>%
+  ExtTrails <- read_table(colNames, col_names = FALSE) %>%
     select(colNames)%>%
     filter_if(is.numeric, all_vars((.) != 0))
 
@@ -690,3 +690,37 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
   return(df_Confusion)
   
 }
+
+######14) Confusion_centerline #####
+rast2polygon <- function(rast, colNames){
+  # #Function to polygonize xyz file with the scalar field (drops the z), 
+  # differs from xyz2rast(Polygonize=TRUE) by not needing to fit the xyz points
+  # into a raster (Later going to be merged)
+    library(terra)
+    library(tidyverse)
+    
+    #Read in the xyz file
+    xyz_table <- read_table(xyz, col_names = FALSE)
+    
+    #Take the name of the file 
+    #Plot_number <- str_extract(xyz, "Plot_[0-9]+")
+    
+    #Paste it towards the directory
+    #directory <- paste0(dir, Plot_number, ".gpkg")
+    
+    #Drop the z column (height)
+    polygon <- xyz_table %>%
+      select(colNames)%>%
+      rast() %>%
+      gapRemover2(nPix = 3) %>%
+      subst(0, NA)%>%
+      as.polygons(dissolve = TRUE)
+    
+    #Save the resulting spatvector if save is true
+    
+    
+    #Return the polygon if save is of
+    
+    return(polygon)
+    
+ }
