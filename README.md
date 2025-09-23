@@ -83,7 +83,8 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
 ### Network Change Detection
  **Under Construction:** This section will include instructions for detecting and visualizing changes in trail networks.
  
-## **Example output: Optimization of one validation plot
+## Example output 
+### Optimization of one validation plot:
 <img width="4962" height="3507" alt="OptimizationAHN5_2" src="https://github.com/user-attachments/assets/17566122-aada-4ffb-ba2e-64c5a52478a9" />
  
 ## License
