@@ -63,13 +63,13 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
   - Set the directories of the manually validated plots in "3_ConfusionMaker.R". In our case the validation plots contain two groups. One grazed by only deers (DO) and one grazed by both deer and geese (DG).
    ```r
    #List and load the manually validated centerlines
-   DO_ValidatedCenterlines <- list.files("dir-to-validatedcenterlines",
+   DO_ValidatedCenterlines <- list.files("dir-to-validated-centerlines.gpkg",
                                            full.names = TRUE)%>%
    map(vect)%>%
    svc()
 
    #List and load the manually validated polygons
-   DO_ValidatedPolygons <- list.files(""dir-to-validatedcenterlines"",
+   DO_ValidatedPolygons <- list.files("dir-to-validated-polygons.gpkg",
                                         full.names = TRUE)%>%
    map(vect)%>%
    svc()
