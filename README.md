@@ -85,7 +85,7 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
  
 ## Example output 
 ### Optimization of one validation plot:
-<img width="4962" height="3507" alt="OptimizationAHN5_2" src="https://github.com/user-attachments/assets/17566122-aada-4ffb-ba2e-64c5a52478a9" />
+<img width="1200" height="850" alt="OptimizationAHN5_2" src="https://github.com/user-attachments/assets/17566122-aada-4ffb-ba2e-64c5a52478a9" />
  
 ## License
 
