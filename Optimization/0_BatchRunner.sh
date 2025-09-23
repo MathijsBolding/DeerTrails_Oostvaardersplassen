@@ -43,15 +43,15 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 	fi
 
 	# Run the scripts in sequence, passing output as input to the next
-	echo "Running 1-xyz2polygon.R..."
-	Rscript "$(dirname "$0")/1-xyz2polygon.R" "$folder" "$pol_folder"
+	echo "Running 1_xyz2polygon.R..."
+	Rscript "$(dirname "$0")/1_xyz2polygon.R" "$folder" "$pol_folder"
 	if [ $? -ne 0 ]; then
 	    echo "Error: xyz2polygon.R failed."
 	    exit 1
 	fi
 
 	echo "Running Centerline.py..."
-	python "$(dirname "$0")/2-centerliner.py" "$pol_folder" "$cen_folder"
+	python "$(dirname "$0")/2_Centerliner.py" "$pol_folder" "$cen_folder"
 	if [ $? -ne 0 ]; then
 	    echo "Error: Centerline.py failed."
 	    exit 1
@@ -59,7 +59,7 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 	
 	#Last script to create the confusion matrix
 		# Run the scripts in sequence, passing output as input to the next
-	echo "Running 3-ConfusionMaker.R..."
+	echo "Running 3_ConfusionMaker.R..."
 	Rscript "$(dirname "$0")/3-ConfusionMaker.R" "$cen_folder" "$pol_folder" "$Confusion_file"
 	if [ $? -ne 0 ]; then
 	    echo "Error: 3-ConfusionMaker.R failed."
@@ -72,7 +72,7 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 done
 
 #Run the last R script 
-Rscript "$(dirname "$0")/4-BoxPlotter.R" "$Confusion_file" "$input_folder"
+Rscript "$(dirname "$0")/4_BoxPlotter.R" "$Confusion_file" "$input_folder"
 
 echo "Boxplots for this parameter created"
 
