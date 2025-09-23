@@ -74,9 +74,10 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
    svc()
    ```
 3. **Run the analysis:**
-   - Execute `0_BatchRunner.sh` to generate confusion matrices and boxplots.
+   - Execute `0_BatchRunner.sh` to calculate the confusion matrix, recall, precision and F1-Score
+     
 4. **Select parameters:**
-   - Use the boxplots to identify the optimal parameter settings.
+   - Select optimal parameter values based on the F1-score and boxplots.
 
 ### Network Change Detection
  **Under Construction:** This section will include instructions for detecting and visualizing changes in trail networks.
