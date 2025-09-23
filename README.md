@@ -9,9 +9,12 @@
 
 
 ## Overview
-This repository contains the code to detect changes in the network structure of deer trails in the Oostvaardersplassen. This project builds on the trail extraction workflow by Jinhu-Wang:(https://github.com/Jinhu-Wang/Extracting-ungulate-trails-in-wetlands-using-3D-point-clouds-obtained-from-airborne-laser-scanning). 
+This repository contains the code to detect changes in the network structure of deer trails in the Oostvaardersplassen from aerial lasercanning surveys (AHN). This project builds on the trail extraction workflow by Jinhu-Wang:(https://github.com/Jinhu-Wang/Extracting-ungulate-trails-in-wetlands-using-3D-point-clouds-obtained-from-airborne-laser-scanning). 
 
 As addition to the original workflow, the centerlines of the extracted trails are extracted and converted to "nodes" and "edges" in order to use network topology and graph theory. The first part of this repository contains the code for calculating the confusion matrix used for optimizing the parameters of the trail extraction workflow. Optimizing the workflow parameters is necessary in order to get comparable results across datasets differing in surveying method and point cloud density. The second part, "Network Change Detection" is used to detect and visualize changes in the trail network structure. 
+
+### Schematic represantion of optimization and change detection
+<img width="1752" height="893" alt="afbeelding" src="https://github.com/user-attachments/assets/bfdf853e-ca05-40af-86e4-3cf480467d2e" />
 
 ## File Structure
 
