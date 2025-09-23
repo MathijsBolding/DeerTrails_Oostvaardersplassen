@@ -32,31 +32,31 @@ Centerlines <- list.files(ahn5_cen,
 
 
 Polygons <- list.files(ahn5_pol,
-                       full.names = TRUE)  %>%
+                                full.names = TRUE)  %>%
   map(vect)%>%
   svc()
 
 DeerGeese_ValCenterlines <- list.files("D:/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/cen",
-                                       full.names = TRUE)%>%
+                                  full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
 DeerGeese_ValPolygons <- list.files("D:/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/pol",
-                                    full.names = TRUE)
+                   full.names = TRUE)
 
 
 #Use the confusion centerline function to calculate the performance metrics
 DeerGeese_confusion <- map(DeerGeese_ValPolygons,
                            ~ConfusionCenterline(extr_cen = Centerlines,
-                                                extr_pol = Polygons,
-                                                val_cen = DeerGeese_ValCenterlines,
-                                                val_plot = .x))%>%
-  #Bind rows to merge the tibbles together
-  bind_rows() %>%
-  #Calculate the performance metrics
-  mutate(Recall = TP/(TP+FN),
-         Precision = TP/(TP+FP),
-         F1_score = 2 * (Recall*Precision)/(Recall+Precision))
+                                extr_pol = Polygons,
+                                val_cen = DeerGeese_ValCenterlines,
+                                val_plot = .x))%>%
+                                #Bind rows to merge the tibbles together
+                                bind_rows() %>%
+                                #Calculate the performance metrics
+                                 mutate(Recall = TP/(TP+FN),
+                                        Precision = TP/(TP+FP),
+                                        F1_score = 2 * (Recall*Precision)/(Recall+Precision))
 print("DeerGeese Created")
 
 
@@ -69,20 +69,20 @@ DeerGeese_confusion$Group <- "DeerGeese"
 
 ##### Calculate the confusion matrix for the DeerOnly files.  #####
 DeerOnly_ValCenterlines <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerOnly/cen",
-                                      full.names = TRUE)%>%
+                                           full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
 DeerOnly_ValPolygons <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerOnly/pol",
-                                   full.names = TRUE)
+                                        full.names = TRUE)
 
 
 #Calculate the confusion matrix for the DeerOnly group
 DeerOnly_confusion <- map(DeerOnly_ValPolygons,
-                          ~ConfusionCenterline(extr_cen = Centerlines,
-                                               extr_pol = Polygons,
-                                               val_cen = DeerOnly_ValCenterlines,
-                                               val_plot = .x))%>%
+                           ~ConfusionCenterline(extr_cen = Centerlines,
+                                                 extr_pol = Polygons,
+                                                 val_cen = DeerOnly_ValCenterlines,
+                                                 val_plot = .x))%>%
   #Bind rows to merge the tibbles together
   bind_rows() %>%
   #Calculate the performance metrics
@@ -96,7 +96,7 @@ DeerOnly_confusion$Group <- "DeerOnly"
 #
 # #Bind groups together
 df_Confusion <- bind_rows(DeerOnly_confusion,
-                          DeerGeese_confusion)
+                           DeerGeese_confusion)
 
 
 print("df_Confusion Created")
@@ -115,8 +115,7 @@ path_Confusion <- file.path(args[3])
 if(file.exists(path_Confusion)){
   write_csv(df_Confusion, path_Confusion,
             append  = TRUE)
-  
+
 }else write_csv(df_Confusion, path_Confusion,
                 col_names = TRUE)
-
 
