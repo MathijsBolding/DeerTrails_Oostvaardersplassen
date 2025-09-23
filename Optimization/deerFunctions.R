@@ -627,7 +627,7 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
   sv_ValPlot <- vect(val_plot, crs = "EPSG:28992")
   
   #Get the plot number
-  PlotNumber <- str_extract(val_plot, "Plot_[0-9]+")
+  PlotNumber <- str_extract(val_plot, "[0-9]+Plot")
   
   # Get bounding box of the validation plot
   bb_val <- ext(sv_ValPlot)  
