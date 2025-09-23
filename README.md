@@ -87,6 +87,7 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
 ### Optimization of one validation plot:
 This figure shows the optimization process of one validation plot. Upper left shows the extracted trails with the original parameter setting.
 Bottom right the extracted trails after optimizing the parameters. 
+
 <img width="1200" height="850" alt="OptimizationAHN5_2" src="https://github.com/user-attachments/assets/17566122-aada-4ffb-ba2e-64c5a52478a9" />
  
 ## License
