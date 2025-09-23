@@ -5,6 +5,7 @@
 - [File Structure](#file-structure)
 - [Requirements](#requirements)
 - [Usage Instructions](#usage-instructions)
+- [Example output](#Example-output)
 - [License](#license)
 
 
@@ -13,7 +14,7 @@ This repository contains the code to detect changes in the network structure of 
 
 As addition to the original workflow, the centerlines of the extracted trails are extracted and converted to "nodes" and "edges" in order to use network topology and graph theory. The first part of this repository contains the code for calculating the confusion matrix used for optimizing the parameters of the trail extraction workflow. Optimizing the workflow parameters is necessary in order to get comparable results across datasets differing in surveying method and point cloud density. The second part, "Network Change Detection" is used to detect and visualize changes in the trail network structure. 
 
-### Schematic represantion of optimization and change detection
+### Schematic overview of optimization and change detection
 <img width="1752" height="893" alt="afbeelding" src="https://github.com/user-attachments/assets/bfdf853e-ca05-40af-86e4-3cf480467d2e" />
 
 ## File Structure
@@ -78,9 +79,12 @@ The R scripts in this repository use the libraries: tidyverse, terra and tidygra
      
 4. **Select parameters:**
    - Select optimal parameter values based on the F1-score and boxplots.
-
+  
 ### Network Change Detection
  **Under Construction:** This section will include instructions for detecting and visualizing changes in trail networks.
+ 
+## **Example output: Optimization of one validation plot
+<img width="4962" height="3507" alt="OptimizationAHN5_2" src="https://github.com/user-attachments/assets/17566122-aada-4ffb-ba2e-64c5a52478a9" />
  
 ## License
 
