@@ -1,4 +1,4 @@
-# DeerTrails_Oostvaardersplassen
+# **Tracking Trails:** Change detection of herbivore impacts in wetlands, using multitemporal LiDAR-surveys
 ## Table of Contents
 
 - [Overview](#overview)
