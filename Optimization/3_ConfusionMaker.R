@@ -4,14 +4,14 @@ library(tidyverse)
 library(terra)
 
 #Load in the deerFunctions
-source("D:/UvA_baan/Workflow/TheCleanRoom/Scripts/Optimization/deerFunctions.R")
+source("deerFunctions.R")
 
 #Take the input arguments 
 args <- commandArgs(trailingOnly = TRUE)
 
-ahn5_cen <- "D:/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/cen"
+#ahn5_cen <- "/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/cen"
 
-ahn5_pol <- "D:/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/pol"
+#ahn5_pol <- "/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/pol"
 
 
 #Extract the parameter settings from the folder name: 
@@ -25,23 +25,22 @@ Dataset <- basename(dirname(dirname(dirname(args[1]))))
 
 ##### Calculate the confusion matrix for the deergeese files.  #####
 #Load in the the centerlines and the polygons for the extracted and validated
-Centerlines <- list.files(ahn5_cen,
+Centerlines <- list.files(args[1],
                           full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-
-Polygons <- list.files(ahn5_pol,
+Polygons <- list.files(args[2],
                        full.names = TRUE)  %>%
   map(vect)%>%
   svc()
 
-DeerGeese_ValCenterlines <- list.files("D:/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/cen",
+DeerGeese_ValCenterlines <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/cen",
                                        full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-DeerGeese_ValPolygons <- list.files("D:/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/pol",
+DeerGeese_ValPolygons <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/pol",
                                     full.names = TRUE)
 
 
@@ -57,12 +56,6 @@ DeerGeese_confusion <- map(DeerGeese_ValPolygons,
   mutate(Recall = TP/(TP+FN),
          Precision = TP/(TP+FP),
          F1_score = 2 * (Recall*Precision)/(Recall+Precision))
-print("DeerGeese Created")
-
-
-plot(Centerlines[1])
-plot(sv_ValPlot[1])
-
 
 DeerGeese_confusion$Group <- "DeerGeese"
 
@@ -93,30 +86,61 @@ DeerOnly_confusion <- map(DeerOnly_ValPolygons,
 print("DeerOnly Created")
 #Name the DeerOnly group
 DeerOnly_confusion$Group <- "DeerOnly"
-#
-# #Bind groups together
-df_Confusion <- bind_rows(DeerOnly_confusion,
-                          DeerGeese_confusion)
 
+
+#Bind the groups together for the dataset with the results of all the plots
+df_Confusion <- bind_rows(DeerOnly_confusion,
+                          DeerGeese_confusion)%>%
+  mutate(ParSetting = ParSetting,
+         Parameter = Parameter,
+         Dataset = Dataset)
 
 print("df_Confusion Created")
 
-#Store all other useful information
-#Create a column to and set the name
-df_Confusion$ParSetting <- ParSetting
-df_Confusion$Parameter <- Parameter
-df_Confusion$Dataset <- Dataset
+#Create the dataset with only the summed confusion matrix 
+df_Summary <- bind_rows(DeerOnly_confusion,
+                       DeerGeese_confusion) %>%
+  select(TP, FP, FN)%>%
+  summarise(TP = sum(TP),
+            FP = sum(FP),
+            FN = sum(FN))%>%
+  mutate(Recall = TP/(TP+FN),
+         Precision = TP/(TP+FP),
+         F1_score = 2 * (Recall*Precision)/(Recall+Precision),
+         Plot = "All_Plots",
+         ParSetting = ParSetting,
+         Parameter = Parameter,
+         Dataset = Dataset,
+         Group = "Both")
 
 #Take in the argument with the location of the .csv
 path_Confusion <- file.path(args[3])
 
+#Create the file path names
+file_ConfusionMatrix <- file.path(path_Confusion, "ConfusionMatrix.csv")
+file_ConfusionSummary <- file.path(path_Confusion, "ConfusionSummary.csv")
+
 
 #Check if the file exists, if yes append otherwise create
-if(file.exists(path_Confusion)){
-  write_csv(df_Confusion, path_Confusion,
+if(dir.exists(path_Confusion)){
+  write_csv(df_Confusion, file_ConfusionMatrix,
             append  = TRUE)
   
-}else write_csv(df_Confusion, path_Confusion,
-                col_names = TRUE)
+  write_csv(df_Summary, file_ConfusionSummary,
+            append = TRUE)
+  
+}else{
+  #Create the path
+  dir.create(path_Confusion)
+  
+  #Create the files
+  write_csv(df_Confusion, file_ConfusionMatrix,
+            col_names = TRUE)
+  
+  write_csv(df_Summary,file_ConfusionSummary,
+            col_names = TRUE)
+  
+} 
+ 
 
 

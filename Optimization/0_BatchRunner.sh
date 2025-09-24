@@ -60,9 +60,9 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 	#Last script to create the confusion matrix
 		# Run the scripts in sequence, passing output as input to the next
 	echo "Running 3_ConfusionMaker.R..."
-	Rscript "$(dirname "$0")/3-ConfusionMaker.R" "$cen_folder" "$pol_folder" "$Confusion_file"
+	Rscript "$(dirname "$0")/3_ConfusionMaker.R" "$cen_folder" "$pol_folder" "$Confusion_file"
 	if [ $? -ne 0 ]; then
-	    echo "Error: 3-ConfusionMaker.R failed."
+	    echo "Error: 3_ConfusionMaker.R failed."
 	    exit 1
 	fi
 

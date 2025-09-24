@@ -363,15 +363,14 @@ TrailFractionCalculator <- function(folder){
 #####10) xyx2Spatraster
 xyz2rast <- function(xyz_file,
                      polygonize = FALSE,
-                     colNames= c("X1", "X2", "X4")) {
+                     colNames= c("X1", "X2", "X3")) {
   #This function loads in the extracted trail points and converts
   #them to a spatrasters 
   library(terra)
   library(tidyverse)
   #load in the file list
-  ExtTrails <- read_table(colNames, col_names = FALSE) %>%
-    select(colNames)%>%
-    filter_if(is.numeric, all_vars((.) != 0))
+  ExtTrails <- read_table(xyz_file, col_names = FALSE) %>%
+    select(colNames)
 
     #get the name 
   raster_name <- basename(xyz_file)%>%
@@ -625,10 +624,23 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
   
   # Load in the validation plot as spatvector 
   sv_ValPlot <- vect(val_plot, crs = "EPSG:28992")
-  
+
   #Get the plot number
-  PlotNumber <- str_extract(val_plot, "[0-9]+Plot")
+  Plot <- str_extract(val_plot, "[0-9]+_Plot")
   
+  #Get DeerOnly/DeerGeese from folder name
+  Group <- basename(dirname(dirname(val_plot)))
+  
+  #Set directory for the TP, FP, FN geopackages
+  dir_TP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/TP",
+                    paste0(Plot,"_", Group,".gpkg"))
+  
+  dir_FN <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FN",
+                      paste0(Plot,"_", Group,".gpkg"))
+  
+  dir_FP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FP",
+                      paste0(Plot,"_", Group,".gpkg"))
+
   # Get bounding box of the validation plot
   bb_val <- ext(sv_ValPlot)  
   
@@ -636,6 +648,9 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
   
   #Create a function to filter the spatvectorcollection by extent
   FilterFun <- function(vec){
+    #Set the correct crs 
+    crs(vec) <- "EPSG:28992"
+    
     #Get the bounding box of the vector 
     bb_extr <- ext(vec)
     
@@ -667,31 +682,34 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
   sv_ValCen <- sv_ValCen[[1]]%>%
     terra::crop(bb_val)
   
-  
+
   print("sv returned")
   #Get the true positives
   TP <- terra::intersect(sv_ExtrCen, sv_ValPlot)%>%
+    #writeVector(dir_TP, overwrite = TRUE) #%>%
     perim()%>%
     sum()
   #Get the false positives
   FP <- terra::erase(sv_ExtrCen, sv_ValPlot)%>%
+    #writeVector(dir_FP, overwrite = TRUE)#%>%
     perim()%>%
     sum()
   
   #Get the false negatives
   FN <- terra::erase(sv_ValCen, sv_ExtrPol)%>%
+    #writeVector(dir_FN, overwrite = TRUE)%>%
     perim()%>%
     sum()
   
   #Combine the values together in rows
-  df_Confusion <- tibble(PlotNumber, TP, FP, FN)
+  df_Confusion <- tibble(Plot, TP, FP, FN)
   
   
   return(df_Confusion)
   
 }
 
-######14) Confusion_centerline #####
+######14) rast2Polygon #####
 rast2polygon <- function(rast, colNames){
   # #Function to polygonize xyz file with the scalar field (drops the z), 
   # differs from xyz2rast(Polygonize=TRUE) by not needing to fit the xyz points
@@ -699,8 +717,11 @@ rast2polygon <- function(rast, colNames){
     library(terra)
     library(tidyverse)
     
+    print(rast)
+  
     #Read in the xyz file
-    xyz_table <- read_table(xyz, col_names = FALSE)
+    xyz_table <- read_table(rast, col_names = FALSE)
+    
     
     #Take the name of the file 
     #Plot_number <- str_extract(xyz, "Plot_[0-9]+")
