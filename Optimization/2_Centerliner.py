@@ -1,12 +1,12 @@
 #This script extracts the centerline of the created polygons 
 #Import the important packages 
+from multiprocessing import Pool
 import pygeoops 
 import geopandas as gpd
-import matplotlib as plt
 import shapely
 import os
 import sys
-
+import concurrent.futures
 #Create the centerline function
 def Centerliner(path_name, output_folder,
                branch_length, extend, densify_distance):
@@ -65,9 +65,30 @@ def Centerliner(path_name, output_folder,
 #Run the function for the complete complete folder
 directory = sys.argv[1] 
 
-for entry in os.scandir(directory):  
-    if entry.is_file():  # check if it's a file
-        Centerliner(path_name = entry.path, output_folder = sys.argv[2],
-                   branch_length = 1, extend = True, densify_distance = 0.2)
+def main():
+    directory = sys.argv[1]
+    output_folder = sys.argv[2]
+    branch_length = 1
+    extend = True
+    densify_distance = 0.2
+    # Get all files to process
+    files = [entry.path for entry in os.scandir(directory) if entry.is_file()]
 
-    
+    # Parallelize file processing
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                Centerliner,
+                path_name=file,
+                output_folder=output_folder,
+                branch_length=branch_length,
+                extend=extend,
+                densify_distance=densify_distance
+            )
+            for file in files
+        ]
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures)
+
+if __name__ == "__main__":
+    main()
