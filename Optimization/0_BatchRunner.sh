@@ -9,12 +9,12 @@ fi
 
 #Assign the variables 
 input_folder="$1"
-Confusion_file="$2"
+Confusion_folder="$2"
 
 
 
 echo "Input folder path: '$input_folder'"
-echo "Output file path: '$Confusion_file' " 
+echo "Output file path: '$Confusion_folder' " 
 
 if [ ! -d "$input_folder" ]; then
     echo "Error: Input folder '$input_folder' does not exist."
@@ -60,7 +60,7 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 	#Last script to create the confusion matrix
 		# Run the scripts in sequence, passing output as input to the next
 	echo "Running 3_ConfusionMaker.R..."
-	Rscript "$(dirname "$0")/3_ConfusionMaker.R" "$cen_folder" "$pol_folder" "$Confusion_file"
+	Rscript "$(dirname "$0")/3_ConfusionMaker.R" "$cen_folder" "$pol_folder" "$Confusion_folder"
 	if [ $? -ne 0 ]; then
 	    echo "Error: 3_ConfusionMaker.R failed."
 	    exit 1
@@ -68,12 +68,13 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 
 	
 
-	echo "All scripts completed successfully. Confusion scores appended to: $Confusion_file"
+	echo "All scripts completed successfully. Confusion scores appended to: $Confusion_folder"
 done
+echo "All folders processed."
 
 #Run the last R script 
-Rscript "$(dirname "$0")/4_BoxPlotter.R" "$Confusion_file" "$input_folder"
+Rscript "$(dirname "$0")/4_GraphMaker.R" "$Confusion_folder" "$input_folder"
 
-echo "Boxplots for this parameter created"
+echo "Line graph created for the parameter"
 
-echo "All folders processed."
+
