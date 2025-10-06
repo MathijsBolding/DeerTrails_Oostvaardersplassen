@@ -13,12 +13,12 @@ OutputFolder <- dirname(args[1])
 ParameterName <- basename(args[2])
 
 #Read in the summary file
-df_ConfusionSummary <- read.csv(file.path(args[1], "ConfusionSummary.csv"))
+df_ConfusionSummary <- read.csv(file.path(args[1], "ConfusionSummary.csv"))%>%
+    filter(Parameter == ParameterName)
 
 
 #Make the format long for plotting
 df_ConfusionLong <- df_ConfusionSummary %>%
-  filter(Parameter == "Ratio")%>%
   group_by(ParSetting)%>%
   summarise(F1_score = list(F1_score), 
             Recall = list(Recall),
@@ -41,6 +41,7 @@ gg_line <- ggplot(df_ConfusionLong, aes(x = ParSetting,
                                    group = Metric)) +
         geom_line(size = 1.3) +
         geom_point(size = 2) +
+        ggtitle(paste0("Perfomance metrics: ", ParameterName))+    
         theme_bw(base_size = 15) +
         ylab("Value") +
         xlab("Parameter Setting") +
@@ -53,6 +54,7 @@ gg_PrecisionRecall <- ggplot(df_ConfusionSummary, aes(x = Recall,
   geom_line(size = 1.3) +
   geom_point(size = 2) +
   theme_bw(base_size = 15) +
+  ggtitle(paste0("Precision-Recall: ", ParameterName))+
   ylab("Precision") +
   xlab("Recall") +
   labs(color = "")+

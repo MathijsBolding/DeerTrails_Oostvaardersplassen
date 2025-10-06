@@ -136,7 +136,7 @@ RasterTiler <- function(rast, grid, dir = "temp", rm = FALSE){
   
   #retile the raster 
   makeTiles(rast, grid, 
-            paste(dir,"tile_.tif", sep = "/"), na.rm = TRUE)
+            paste(dir,"tile_.gpkg", sep = "/"), na.rm = TRUE)
   
   #List the folder with the tiles
   tile_list <- list.files(dir,
@@ -175,8 +175,8 @@ batchProcesser_v2 <- function(tile, outputName = "PathSizeRast.tif"){
   #Calculate the track area for all the subTiles
   list_TrackArea <- map(sub_tiles, trackAreaCalculator,
                         .progress = TRUE)
-  print("hallo")
-  #Merge the tiles together to the fragmentation raster
+
+    #Merge the tiles together to the fragmentation raster
   fragRast_x_x <- list_TrackArea%>%
     sprc() %>%
     merge()
@@ -653,7 +653,7 @@ ConfusionCenterline <- function(extr_cen, extr_pol,
     
     #Get the bounding box of the vector 
     bb_extr <- ext(vec)
-    
+
     #Check if bounding boxes intersect
     intersects <- !is.na(terra::intersect(bb_extr, bb_val))
     

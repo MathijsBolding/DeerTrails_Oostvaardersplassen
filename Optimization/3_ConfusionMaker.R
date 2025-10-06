@@ -4,43 +4,42 @@ library(tidyverse)
 library(terra)
 
 #Load in the deerFunctions
-source("deerFunctions.R")
+source("TheCleanRoom/GithubRepository/DeerTrails_Oostvaardersplassen/Optimization/deerFunctions.R")
 
 #Take the input arguments 
 args <- commandArgs(trailingOnly = TRUE)
 
-#ahn5_cen <- "/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/cen"
+ahn4_cen300 <- "OptimizationFiles/AHN4/Clipped300m/cen"
 
-#ahn5_pol <- "/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/Optimization/AHN5/Ratio/rat0.4/pol"
-
+ahn4_pol300 <- "OptimizationFiles/AHN4/Clipped300m/pol"
 
 #Extract the parameter settings from the folder name: 
-ParSetting <- basename(dirname(args[1]))
+ParSetting <- basename(dirname(ahn4_cen300))
 
 #Extract the parameter from the folder path
-Parameter <- basename(dirname(dirname(args[1])))
+Parameter <- basename(dirname(dirname(ahn4_cen300)))
 
 #Extract the dataset
-Dataset <- basename(dirname(dirname(dirname(args[1]))))
+Dataset <- basename(dirname(dirname(dirname(ahn4_cen300))))
 
 ##### Calculate the confusion matrix for the deergeese files.  #####
 #Load in the the centerlines and the polygons for the extracted and validated
-Centerlines <- list.files(args[1],
+Centerlines <- list.files(ahn4_cen300,
                           full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-Polygons <- list.files(args[2],
+Polygons <- list.files(ahn4_pol300,
                        full.names = TRUE)  %>%
   map(vect)%>%
   svc()
 
-DeerGeese_ValCenterlines <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/cen",
+DeerGeese_ValCenterlines <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerGeese/cen",
                                        full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-DeerGeese_ValPolygons <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerGeese/pol",
+DeerGeese_ValPolygons <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerGeese/pol",
                                     full.names = TRUE)
 
 
@@ -61,12 +60,12 @@ DeerGeese_confusion$Group <- "DeerGeese"
 
 
 ##### Calculate the confusion matrix for the DeerOnly files.  #####
-DeerOnly_ValCenterlines <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerOnly/cen",
+DeerOnly_ValCenterlines <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerOnly/cen",
                                       full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-DeerOnly_ValPolygons <- list.files("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Data/ValidationPlots/AHN5/DeerOnly/pol",
+DeerOnly_ValPolygons <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerOnly/pol",
                                    full.names = TRUE)
 
 
