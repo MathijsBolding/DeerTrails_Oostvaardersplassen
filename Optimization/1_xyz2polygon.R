@@ -4,8 +4,8 @@
 #Load in the necessary libraries
 library(tidyverse)
 library(purrr)
-
 library(terra)
+
 #Load in the deer functions
 source("deerFunctions.R")
 
@@ -20,7 +20,7 @@ output_DeerGeese <- args[2]
 
 #Convert the xyz files to gpkg's 
 #For the deergeese
-walk(files_DeerGeese, ~GeoSaver(fun = xyz2rast, 
+walk(files_DeerGeese, ~GeoConverter(fun = xyz2rast, 
                                dir = .x, 
                                polygonize = TRUE,
                                save_dir = output_DeerGeese))

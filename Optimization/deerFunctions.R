@@ -575,11 +575,13 @@ datasetCreator <- function(extTrailsDeer, extTrailsDeerGeese,
 }
 
 #####13) Geosaver #####
-GeoSaver <- function(fun, dir, ..., save_dir = NULL){
-  #Function to save the results of a function as a .tif of geopackage. 
+GeoConverter <- function(fun, dir, ..., save_dir = NULL,
+                     split_geometries = FALSE){
+  #Function to save the results of a convertion function as a .tif of geopackage. 
   #St
   library(terra)
   library(tidyverse)
+  library(sf)
   
   #Extract the basename of the file and remove extention 
   basename <- basename(dir)%>%
@@ -603,10 +605,28 @@ GeoSaver <- function(fun, dir, ..., save_dir = NULL){
     writeRaster(result, out_file, overwrite = TRUE)
     
   } else if (inherits(result, "SpatVector")) {
+    #check whether split geometries is true
+    if(split_geometries == TRUE){
+      #Convert to sf
+      sf_result <- st_as_sf(result)%>%
+        st_cast("POLYGON")
+      
+      #From multipolygon to polygon
+      list_polygons <- split(sf_result, 
+                             seq(nrow(sf_result)))
+      
+      #Save all the geometries seperately
+      walk2(.x = list_polygons, 
+            .y = seq_along(list_polygons),
+            .f = ~ st_write(.x, file.path(save_dir, paste0(basename, 
+                                                           .y, ".gpkg"))))
+    }else
+      
     writeVector(result, out_file, overwrite = TRUE, filetype = "GPKG")
+
     
-  } else {
-    warning("Result is not a SpatRaster or SpatVector. Nothing was saved.")
+      } else {
+    warning("Result is not a SpatRaster or SpatVector")
   }
   
   return(result)
@@ -745,3 +765,35 @@ rast2polygon <- function(rast, colNames){
     return(polygon)
     
  }
+
+######15) virtualRasterMerger #####
+virtualRasterMerger <- function(folder, polygonize = TRUE){
+  library(terra)
+  
+  #Exract the basename
+  dir_name <- dirname(folder)
+  
+  #Create the virtual raster name
+  vrt_name <- file.path(dir_name, paste0("VirtualRaster", ".vrt"))
+  
+  #List the files of the input folder
+  file_list <- list.files(folder,
+                          full.names = TRUE)
+  
+  #Create the virtual raster
+  vrt(file_list, vrt_name, overwrite = TRUE)
+  
+  if(polygonize == TRUE){
+    #Create a polygon
+    sf_Trails <- rast(vrt_name)%>%
+      subst(0, NA)%>%
+      as.polygons(dissolve = TRUE)
+    
+    return(sf_Trails)
+  }else{
+    spr_Trails <- rast(vrt_name)
+    
+    writeRaster(spr_Trails, paste0(vrt_name, ".tif"))
+  }
+  
+}
