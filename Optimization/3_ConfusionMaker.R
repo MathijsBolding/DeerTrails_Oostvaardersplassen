@@ -4,32 +4,29 @@ library(tidyverse)
 library(terra)
 
 #Load in the deerFunctions
-source("TheCleanRoom/GithubRepository/DeerTrails_Oostvaardersplassen/Optimization/deerFunctions.R")
+source("deerFunctions.R")
 
 #Take the input arguments 
 args <- commandArgs(trailingOnly = TRUE)
 
-ahn4_cen300 <- "OptimizationFiles/AHN4/Clipped300m/cen"
-
-ahn4_pol300 <- "OptimizationFiles/AHN4/Clipped300m/pol"
 
 #Extract the parameter settings from the folder name: 
-ParSetting <- basename(dirname(ahn4_cen300))
+ParSetting <- basename(dirname(args[1]))
 
 #Extract the parameter from the folder path
-Parameter <- basename(dirname(dirname(ahn4_cen300)))
+Parameter <- basename(dirname(dirname(args[1])))
 
 #Extract the dataset
-Dataset <- basename(dirname(dirname(dirname(ahn4_cen300))))
+Dataset <- basename(dirname(dirname(dirname(args[1]))))
 
 ##### Calculate the confusion matrix for the deergeese files.  #####
 #Load in the the centerlines and the polygons for the extracted and validated
-Centerlines <- list.files(ahn4_cen300,
+Centerlines <- list.files(args[1],
                           full.names = TRUE)%>%
   map(vect)%>%
   svc()
 
-Polygons <- list.files(ahn4_pol300,
+Polygons <- list.files(args[2],
                        full.names = TRUE)  %>%
   map(vect)%>%
   svc()

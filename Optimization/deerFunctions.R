@@ -360,24 +360,24 @@ TrailFractionCalculator <- function(folder){
   return(df_TrailFractionLong)
 }
 
+
 #####10) xyx2Spatraster
 xyz2rast <- function(xyz_file,
                      polygonize = FALSE,
-                     colNames= c("X1", "X2", "X3")) {
+                     ValueField = NULL){
   #This function loads in the extracted trail points and converts
   #them to a spatrasters 
   library(terra)
   library(tidyverse)
   #load in the file list
-  ExtTrails <- read_table(xyz_file, col_names = FALSE) %>%
-    select(colNames)
-
-    #get the name 
+  ExtTrails <- read_table(xyz_file, col_names = FALSE)
+  
+  #get the name 
   raster_name <- basename(xyz_file)%>%
     str_sub(1,6)
   
-
-  #Read points 
+  
+  ##Load in the points as vector 
   pts <- vect(ExtTrails, geom = c("X1", "X2"), crs = "EPSG:28992")%>%
     project("EPSG:28992")
   
@@ -389,8 +389,9 @@ xyz2rast <- function(xyz_file,
     project("EPSG:28992")
   
   #Rasterize the plot
-  spr_Ext <- rasterize(pts, r_template, fun = "max", 
+  spr_Ext <- rasterize(pts, r_template, field = ValueField, fun = max, 
                        background = 0)
+  
   #Remove gaps
   spr_ExtGapRemoved <- gapRemover2(spr_Ext, 3)
   
@@ -399,15 +400,15 @@ xyz2rast <- function(xyz_file,
   
   if(polygonize == FALSE){
     
-  return(spr_ExtGapRemoved)
+    return(spr_ExtGapRemoved)
   }else
     #Create a spatvector 
     spr_ExtGapRemoved<- subst(spr_ExtGapRemoved, 0, NA)
-    sv_ExtGapRemoved <- as.polygons(spr_ExtGapRemoved,
-                                    disolve = TRUE)
+  sv_ExtGapRemoved <- as.polygons(spr_ExtGapRemoved,
+                                  disolve = TRUE)
   
   return(sv_ExtGapRemoved)
-    
+  
 }
 
 #####11) Confusions_maker
@@ -797,3 +798,60 @@ virtualRasterMerger <- function(folder, polygonize = TRUE){
   }
   
 }
+
+####15) Function to calculate the path length and number of faces
+#For the network topology raster
+topologyRaster <- function(trails, cell){
+  #Calculate the length of trail inside a grid cell
+  library(terra)
+  library(tidyverse)
+  library(tidygraph)
+  library(sf)
+  
+  #clip out based on extent
+  clippedTrails <- crop(trails, cell)
+  
+  #Calculate length (same as calculating it via edge length)
+  cell$trail_length <- perim(clippedTrails)%>%
+    sum()
+  
+  #Convert the extent of the cell to a line 
+  ext_cell <- as.polygons(cell)%>%
+    set.crs(crs(trails))%>%
+    st_as_sf()%>%
+    st_cast("LINESTRING")
+  
+  #Convert the clipped trails to sf
+  sf_clippedTrails <- st_as_sf(clippedTrails)
+  
+  TrailsWithCell <- st_union(sf_clippedTrails, ext_cell)%>%
+    st_cast("MULTILINESTRING")%>%
+    st_cast("LINESTRING")
+  
+  #Calculate the amount of nodes
+  networkStatistics <- as_sfnetwork(TrailsWithCell, 
+                                    directed = FALSE)%>%
+    activate(edges)%>%
+    morph(to_components)%>%
+    mutate(n_edges  = graph_size(),
+           n_nodes = graph_order(),
+           #assign random number for groups
+           Group = runif(1))%>%
+    unmorph()%>%
+    as_tibble()%>%
+    group_by(Group)%>%
+    summarise(n_edges = first(n_edges),
+              n_nodes = first(n_nodes))%>%
+    st_drop_geometry()%>%
+    summarise(n_edges = sum(n_edges),
+              n_nodes = sum(n_nodes),
+              n_components = n() )%>%
+    mutate(faces = n_edges - n_nodes + n_components)
+  
+  
+  #Get the value is in the cell
+  cell$faces <- networkStatistics$faces[1]
+  
+  return(cell)
+}
+

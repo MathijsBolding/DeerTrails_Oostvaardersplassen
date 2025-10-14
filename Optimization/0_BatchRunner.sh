@@ -22,7 +22,7 @@ if [ ! -d "$input_folder" ]; then
 fi
 
 
-find "$input_folder" -type d -path '*/lapl2' | while read -r folder; do
+find "$input_folder" -type d -path '*/lapl' | while read -r folder; do
     echo "Processing folder: $folder"
     
       # Navigate one folder level up from the found 'lap2laz' folder
