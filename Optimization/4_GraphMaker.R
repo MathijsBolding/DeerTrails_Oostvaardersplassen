@@ -31,7 +31,7 @@ df_ConfusionLong <- df_ConfusionSummary %>%
                values_to = "Value")
 
 #Create the path name
-plotPath <- file.path(OutputFolder, "Graphs/Optimization", paste0(ParameterName, ".pdf"))
+plotPath <- file.path(OutputFolder, "Graphs", paste0(ParameterName, ".pdf"))
 
 #Create both plots and combine them 
 #Create the plot

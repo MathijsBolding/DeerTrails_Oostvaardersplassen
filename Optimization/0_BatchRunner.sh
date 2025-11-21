@@ -55,7 +55,9 @@ find "$input_folder" -type d -path '*/lapl' | while read -r folder; do
 	
 	echo "Running trail Extraction" 
 	
-	cd /media/mathijs/Shared/UvA_baan/Workflow/C++scripts/TrailExtraction_Ubuntu/TrailExtraction/release
+	cd /media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/cpp/trail_extraction_workflow/trail_extraction/TrailExtraction_Ubuntu/TrailExtraction/release
+	
+	make
 	
 	./bin/TensorTrail "$lapl2laz_folder" "$extr_folder"
 	

@@ -9,7 +9,6 @@ source("deerFunctions.R")
 #Take the input arguments 
 args <- commandArgs(trailingOnly = TRUE)
 
-
 #Extract the parameter settings from the folder name: 
 ParSetting <- basename(dirname(args[1]))
 
@@ -24,28 +23,50 @@ Dataset <- basename(dirname(dirname(dirname(args[1]))))
 Centerlines <- list.files(args[1],
                           full.names = TRUE)%>%
   map(vect)%>%
-  svc()
+  vect()
 
 Polygons <- list.files(args[2],
                        full.names = TRUE)  %>%
   map(vect)%>%
-  svc()
+  vect()
 
-DeerGeese_ValCenterlines <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerGeese/cen",
-                                       full.names = TRUE)%>%
-  map(vect)%>%
-  svc()
+#Load in the validated centerlines
+ValidatedCenterlines_clear <- vect("/media/mathijs/Shared/UvA_baan/Workflow/Source/AHN4/CenterlineValidation/AHN4/Centerlines/LidarValidation2020.gpkg",
+                             crs = "EPSG:28992")
 
-DeerGeese_ValPolygons <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerGeese/pol",
-                                    full.names = TRUE)
+ValidatedCenterlines_Vague <- vect("/media/mathijs/Shared/UvA_baan/Workflow/Source/AHN4/CenterlineValidation/AHN4/Centerlines/LidarValidation2020_VaguePaths.gpkg",
+                                   crs = "EPSG:28992")
+
+ValidationComplete <- c(ValidatedCenterlines_clear, ValidatedCenterlines_Vague)%>%
+  vect()
+
+
+#Create the validated polygons  
+ValidatedPolygons <- ValidatedCenterlines_clear %>%
+  buffer(width= 0.5)
+
+PlotsDeerGeese <- vect("/media/mathijs/Shared/UvA_baan/Workflow/Source/MaskLayers/ValidationPlots/Complete30m/DeerGeese/DeerGeeseComplete30m.shp")
+
+PlotsDeerGeese <- PlotsDeerGeese[, "Plot_ID"]
+PlotsDeerGeese$Group <- "DeerGeese"
+
+#Create the plot list for the Deer Geese group
+List_PlotsDeerGeese <- lapply(1:nrow(PlotsDeerGeese), function(i) {
+  plot_locations <- PlotsDeerGeese[i, ]
+  # Perform your operation and return a result
+  return(plot_locations) # Example: calculate area
+})
 
 
 #Use the confusion centerline function to calculate the performance metrics
-DeerGeese_confusion <- map(DeerGeese_ValPolygons,
+DeerGeese_confusion <- map(List_PlotsDeerGeese,
                            ~ConfusionCenterline(extr_cen = Centerlines,
                                                 extr_pol = Polygons,
-                                                val_cen = DeerGeese_ValCenterlines,
-                                                val_plot = .x))%>%
+                                                val_cen = ValidatedCenterlines_clear,
+                                                val_pol = ValidatedPolygons,
+                                                dir_results = dirname(args[1]),
+                                                plot = .x))%>%
+  map(as.data.frame)%>%
   #Bind rows to merge the tibbles together
   bind_rows() %>%
   #Calculate the performance metrics
@@ -55,23 +76,32 @@ DeerGeese_confusion <- map(DeerGeese_ValPolygons,
 
 DeerGeese_confusion$Group <- "DeerGeese"
 
+#Load in the plot extents
+#Get the validation plots
+PlotsDeerOnly<- vect("/media/mathijs/Shared/UvA_baan/Workflow/Source/MaskLayers/ValidationPlots/Complete30m/DeerOnly/DeerOnlyComplete30m.shp",
+                     crs = "EPSG:28992")
 
-##### Calculate the confusion matrix for the DeerOnly files.  #####
-DeerOnly_ValCenterlines <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerOnly/cen",
-                                      full.names = TRUE)%>%
-  map(vect)%>%
-  svc()
+#Select the plot ID column
+PlotsDeerOnly <- PlotsDeerOnly[, "Plot_ID"]
+PlotsDeerOnly$Group <- "DeerOnly"
 
-DeerOnly_ValPolygons <- list.files("TheCleanRoom/Data/ValidationPlots/AHN4/DeerOnly/pol",
-                                   full.names = TRUE)
+#Create the plot list for the Deer Only group
+List_PlotsDeerOnly <- lapply(1:nrow(PlotsDeerOnly), function(i) {
+  plot_locations <- PlotsDeerOnly[i, ]
+  # Perform your operation and return a result
+  return(plot_locations) # Example: calculate area
+})
 
 
 #Calculate the confusion matrix for the DeerOnly group
-DeerOnly_confusion <- map(DeerOnly_ValPolygons,
+DeerOnly_confusion <- map(List_PlotsDeerOnly,
                           ~ConfusionCenterline(extr_cen = Centerlines,
                                                extr_pol = Polygons,
-                                               val_cen = DeerOnly_ValCenterlines,
-                                               val_plot = .x))%>%
+                                               val_cen = ValidatedCenterlines_clear,
+                                               val_pol = ValidatedPolygons,
+                                               dir_results = dirname(args[1]),
+                                               plot = .x))%>%
+  map(as.data.frame)%>%
   #Bind rows to merge the tibbles together
   bind_rows() %>%
   #Calculate the performance metrics
@@ -115,7 +145,6 @@ path_Confusion <- file.path(args[3])
 #Create the file path names
 file_ConfusionMatrix <- file.path(path_Confusion, "ConfusionMatrix.csv")
 file_ConfusionSummary <- file.path(path_Confusion, "ConfusionSummary.csv")
-
 
 #Check if the file exists, if yes append otherwise create
 if(dir.exists(path_Confusion)){

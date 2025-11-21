@@ -125,7 +125,8 @@ VectorTiler <- function(rast, grid, dir){
   }
   
 ####4) Raster Tiler ####
-RasterTiler <- function(rast, grid, dir = "temp", rm = FALSE){
+RasterTiler <- function(rast, grid, dir = "temp", 
+                        rm = FALSE, buffer = 10){
   #This function takes in a raster and retiles it with a grid
   #Standard directory is temp, select rm = FALSE if you want to keep 
   #the folder
@@ -136,7 +137,10 @@ RasterTiler <- function(rast, grid, dir = "temp", rm = FALSE){
   
   #retile the raster 
   makeTiles(rast, grid, 
-            paste(dir,"tile_.gpkg", sep = "/"), na.rm = TRUE)
+            paste(dir,"tile_.tif", sep = "/"), na.rm = TRUE,
+            buffer = buffer)
+  
+
   
   #List the folder with the tiles
   tile_list <- list.files(dir,
@@ -364,7 +368,8 @@ TrailFractionCalculator <- function(folder){
 #####10) xyx2Spatraster
 xyz2rast <- function(xyz_file,
                      polygonize = FALSE,
-                     ValueField = NULL){
+                     ValueField = NULL,
+                     CropSize = NULL){
   #This function loads in the extracted trail points and converts
   #them to a spatrasters 
   library(terra)
@@ -372,37 +377,60 @@ xyz2rast <- function(xyz_file,
   #load in the file list
   ExtTrails <- read_table(xyz_file, col_names = FALSE)
   
+  colnames(ExtTrails) <- c("X1", "X2", "X3", "X4", "X5") 
+  
+  ExtTrails$X1 <- as.numeric(ExtTrails$X1)
+  ExtTrails$X2 <- as.numeric(ExtTrails$X2)
+  
   #get the name 
   raster_name <- basename(xyz_file)%>%
     str_sub(1,6)
   
-  
   ##Load in the points as vector 
-  pts <- vect(ExtTrails, geom = c("X1", "X2"), crs = "EPSG:28992")%>%
-    project("EPSG:28992")
+  pts <- vect(ExtTrails, geom = c("X1", "X2"), crs = "EPSG:28992")
   
   #Load in the points as vector
   ext <- ext(pts)
   
   #Create a raster with the desirered reslution
-  r_template <- rast(ext, resolution = 0.1, crs = "EPSG:28992")%>%
-    project("EPSG:28992")
+  r_template <- rast(ext, resolution = 0.1, 
+                     crs = "EPSG:28992")
   
   #Rasterize the plot
-  spr_Ext <- rasterize(pts, r_template, field = ValueField, fun = max, 
+  spr_Extracted <- rasterize(pts, r_template, field = ValueField, fun = mean, 
                        background = 0)
+  #Crop if crop size is given
+  if(!is.null(CropSize)){
+  #get the centroid of the extent
+  centroid <- centroids(vect(ext))
+  
+  #Get coordinates of the centroid
+  crds_centroid <- crds(centroid)
+  
+  #Get xmin, xmax, ymin, ymax
+  xmin <- crds_centroid[1] -(CropSize/2)
+  xmax <- crds_centroid[1] +(CropSize/2)
+  ymin <- crds_centroid[2] -(CropSize/2)
+  ymax <- crds_centroid[2] +(CropSize/2)
+  
+  #Crop with the extent
+  ext_crop <- ext(xmin, xmax, ymin, ymax)
+  spr_Extracted <- spr_Extracted%>%
+    crop(ext_crop)
+  }
   
   #Remove gaps
-  spr_ExtGapRemoved <- gapRemover2(spr_Ext, 3)
+  spr_ExtGapRemoved <- gapRemover2(spr_Extracted, 3)
   
   #Set the name 
   names(spr_ExtGapRemoved) <- raster_name
   
   if(polygonize == FALSE){
     
-    return(spr_ExtGapRemoved)
+    return(spr_Ext)
   }else
-    #Create a spatvector 
+    #Create a spatvector
+    print("Polygonizing")
     spr_ExtGapRemoved<- subst(spr_ExtGapRemoved, 0, NA)
   sv_ExtGapRemoved <- as.polygons(spr_ExtGapRemoved,
                                   disolve = TRUE)
@@ -579,10 +607,11 @@ datasetCreator <- function(extTrailsDeer, extTrailsDeerGeese,
 GeoConverter <- function(fun, dir, ..., save_dir = NULL,
                      split_geometries = FALSE){
   #Function to save the results of a convertion function as a .tif of geopackage. 
-  #St
   library(terra)
   library(tidyverse)
   library(sf)
+  
+  print("Geoconverting")
   
   #Extract the basename of the file and remove extention 
   basename <- basename(dir)%>%
@@ -622,8 +651,11 @@ GeoConverter <- function(fun, dir, ..., save_dir = NULL,
             .f = ~ st_write(.x, file.path(save_dir, paste0(basename, 
                                                            .y, ".gpkg"))))
     }else
-      
-    writeVector(result, out_file, overwrite = TRUE, filetype = "GPKG")
+      if (nrow(result) == 0) {
+        message(paste("Nothing written for", basename, ": SpatVector is empty"))
+        return(invisible(NULL))
+        
+      }else writeVector(result, out_file, overwrite = TRUE, filetype = "GPKG")
 
     
       } else {
@@ -636,97 +668,94 @@ GeoConverter <- function(fun, dir, ..., save_dir = NULL,
 
 ######13) Confusion_centerline #####
 ConfusionCenterline <- function(extr_cen, extr_pol,
-                                 val_plot, val_cen){
+                                 val_pol, val_cen, dir_results, 
+                                 plot){
   #The confusion maker if the centerline approach is used
   #As entry everything needs to be a spatvector collection except the 
   #Validation plot as polygon
   library(terra)
   library(tidyverse)
   
-  # Load in the validation plot as spatvector 
-  sv_ValPlot <- vect(val_plot, crs = "EPSG:28992")
+  #Get the group ID and Plot number
+  PlotValues <- values(plot)
+  PlotNumber <- PlotValues$Plot_ID[1]
+  PlotGroup <- PlotValues$Group[1]
 
-  #Get the plot number
-  Plot <- str_extract(val_plot, "[0-9]+_Plot")
-  
-  #Get DeerOnly/DeerGeese from folder name
-  Group <- basename(dirname(dirname(val_plot)))
-  
+  print(PlotValues)
   #Set directory for the TP, FP, FN geopackages
-  dir_TP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/TP",
-                    paste0(Plot,"_", Group,".gpkg"))
-  
-  dir_FN <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FN",
-                      paste0(Plot,"_", Group,".gpkg"))
-  
-  dir_FP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FP",
-                      paste0(Plot,"_", Group,".gpkg"))
+  file_TP <- file.path(dir_results, "TP",
+                    paste0(PlotNumber,"_", PlotGroup,".gpkg"))
+  print(file_TP)
 
-  # Get bounding box of the validation plot
-  bb_val <- ext(sv_ValPlot)  
-  
-  print("succes")
-  
-  #Create a function to filter the spatvectorcollection by extent
-  FilterFun <- function(vec){
-    #Set the correct crs 
-    crs(vec) <- "EPSG:28992"
-    
-    #Get the bounding box of the vector 
-    bb_extr <- ext(vec)
+  file_FN <- file.path(dir_results, "FN",
+                      paste0(PlotNumber,"_", PlotGroup,".gpkg"))
 
-    #Check if bounding boxes intersect
-    intersects <- !is.na(terra::intersect(bb_extr, bb_val))
-    
-    #Filter based on bounding boxes
-    vec[intersects, ]
-    
+  file_FP <- file.path(dir_results, "FP",
+                     paste0(PlotNumber,"_", PlotGroup,".gpkg"))
+  
+  #Crop based on the plots
+  sv_ExtrCen <- extr_cen%>%
+      terra::crop(plot)
+  
+  sv_ExtrPol <- extr_pol%>%
+    terra::crop(plot)
+  
+  sv_ValCen <- val_cen%>%
+    terra::crop(plot)
+  
+  sv_ValPol <- val_pol%>%
+    terra::crop(plot)
+
+  print(paste0("Plot: ", plot$Plot_ID))
+  print(paste("ExtrCen features:", nrow(sv_ExtrCen)))
+  print(paste("ValPol features:", nrow(sv_ValPol)))
+  print(paste("ValCen features:", nrow(sv_ValCen)))
+  
+  if (!is.empty(sv_ExtrCen) & !is.empty(sv_ValPol)) {
+    inter <- terra::intersect(sv_ExtrCen, sv_ValPol)
+    print(paste("Intersection features:", nrow(inter)))
+  } else {
+    print("One of the inputs is empty")
   }
-
-  #Map over the filter function to return the matching spatvectors 
-  sv_ExtrCen <- map(extr_cen, FilterFun)%>%
-     discard(~ nrow(.x) == 0)
   
-  sv_ExtrPol <- map(extr_pol, FilterFun) %>%
-   discard(~ nrow(.x) == 0)
-
-  sv_ValCen <- map(val_cen, FilterFun) %>%
-     discard(~ nrow(.x) == 0)
-  
-  print("it works very nicely")
-  
-  #Return the spatvector from the list
-  sv_ExtrCen <- sv_ExtrCen[[1]]%>%
-    terra::crop(bb_val)
-  sv_ExtrPol <- sv_ExtrPol[[1]]%>%
-    terra::crop(bb_val)
-  sv_ValCen <- sv_ValCen[[1]]%>%
-    terra::crop(bb_val)
-  
-
-  print("sv returned")
   #Get the true positives
-  TP <- terra::intersect(sv_ExtrCen, sv_ValPlot)%>%
-    #writeVector(dir_TP, overwrite = TRUE) #%>%
+  plot$TP <- terra::intersect(sv_ExtrCen, sv_ValPol)%>%
     perim()%>%
     sum()
+  
+  #Save the results as spatvector for inspection (only write when there are records)
+  sv_TP <- terra::intersect(sv_ExtrCen, sv_ValPol)
+  
+  if (terra::nrow(sv_TP) > 0){ 
+  writeVector(sv_TP, file_TP, overwrite = TRUE) 
+  } 
+  
   #Get the false positives
-  FP <- terra::erase(sv_ExtrCen, sv_ValPlot)%>%
-    #writeVector(dir_FP, overwrite = TRUE)#%>%
+  plot$FP <- terra::erase(sv_ExtrCen, sv_ValPol)%>%
     perim()%>%
     sum()
+  
+  #Save the results as spatvector for inspection
+  sv_FP <- terra::erase(sv_ExtrCen, sv_ValPol)
+  
+  if(terra::nrow(sv_FP)){
+  writeVector(sv_FP, file_FP, overwrite = TRUE) 
+  }
   
   #Get the false negatives
-  FN <- terra::erase(sv_ValCen, sv_ExtrPol)%>%
-    #writeVector(dir_FN, overwrite = TRUE)%>%
+  plot$FN <- terra::erase(sv_ValCen, sv_ExtrPol)%>%
     perim()%>%
     sum()
   
-  #Combine the values together in rows
-  df_Confusion <- tibble(Plot, TP, FP, FN)
+  #Save the results as spatvector for inspection
+  sv_FN <- terra::erase(sv_ValCen, sv_ExtrPol)
   
+  if(terra::nrow(sv_FN)){
+    writeVector(sv_FN, file_FN, overwrite = TRUE) 
+  }
+    
   
-  return(df_Confusion)
+  return(plot)
   
 }
 
@@ -853,5 +882,160 @@ topologyRaster <- function(trails, cell){
   cell$faces <- networkStatistics$faces[1]
   
   return(cell)
+}
+
+####16) ConfusionCenterline Clone
+#This clone only exist because I am to scared to permanently remove the commented out lines
+ConfusionCenterline_old <- function(extr_cen, extr_pol,
+                                val_pol, val_cen, dir_results, 
+                                plot){
+  #The confusion maker if the centerline approach is used
+  #As entry everything needs to be a spatvector collection except the 
+  #Validation plot as polygon
+  library(terra)
+  library(tidyverse)
+  
+  # Load in the validation plot as spatvector 
+  #val_pol <- vect(val_pol, crs = "EPSG:28992")
+  
+  #Get the plot number
+  #Plot_number <- plot #dirname(FN_folder, "[0-9]+_Plot")
+  
+  #Get DeerOnly/DeerGeese from folder name
+  # Group <- basename(dirname(dirname(val_plot)))
+  
+  #Set directory for the TP, FP, FN geopackages
+  #dir_TP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/TP",
+  #                  paste0(Plot,"_", Group,".gpkg"))
+  
+  #dir_FN <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FN",
+  #                   paste0(Plot,"_", Group,".gpkg"))
+  
+  #dir_FP <- file.path("/media/mathijs/Shared/UvA_baan/Workflow/TheCleanRoom/Output/FP",
+  #                   paste0(Plot,"_", Group,".gpkg"))
+  
+  # Get bounding box of the validation plot
+  #bb_val <- ext(sv_ValPlot)  
+  
+  
+  #Create a function to filter the spatvectorcollection by extent
+  # FilterFun <- function(vec){
+  #   #Set the correct crs 
+  #   crs(vec) <- "EPSG:28992"
+  #   
+  #   #Get the bounding box of the vector 
+  #   bb_extr <- ext(vec)
+  # 
+  #   #Check if bounding boxes intersect
+  #   intersects <- !is.na(terra::intersect(bb_extr, bb_val))
+  #   
+  #   #Filter based on bounding boxes
+  #   vec[intersects, ]
+  #   
+  # }
+  
+  
+  #Map over the filter function to return the matching spatvectors 
+  # sv_ExtrCen <- map(extr_cen, FilterFun)%>%
+  #    discard(~ nrow(.x) == 0)
+  # 
+  # sv_ExtrPol <- map(extr_pol, FilterFun) %>%
+  #  discard(~ nrow(.x) == 0)
+  # 
+  # sv_ValCen <- map(val_cen, FilterFun) %>%
+  #    discard(~ nrow(.x) == 0)
+  # 
+  # print("it works very nicely")
+  # 
+  # #Return the spatvector from the list
+  # sv_ExtrCen <- sv_ExtrCen[[1]]%>%
+  #   terra::crop(bb_val)
+  # sv_ExtrPol <- sv_ExtrPol[[1]]%>%
+  #   terra::crop(bb_val)
+  # sv_ValCen <- sv_ValCen[[1]]%>%
+  #   terra::crop(bb_val)
+  
+  sv_ExtrCen <- extr_cen%>%
+    terra::crop(plot)
+  
+  sv_ExtrPol <- extr_pol%>%
+    terra::crop(plot)
+  
+  sv_ValCen <- val_cen%>%
+    terra::crop(plot)
+  
+  sv_ValPol <- val_pol%>%
+    terra::crop(plot)
+  
+  print(paste0("Plot: ", plot$Plot_ID))
+  print(paste("ExtrCen features:", nrow(sv_ExtrCen)))
+  print(paste("ValPol features:", nrow(sv_ValPol)))
+  print(paste("ValCen features:", nrow(sv_ValCen)))
+  
+  if (!is.empty(sv_ExtrCen) & !is.empty(sv_ValPol)) {
+    inter <- terra::intersect(sv_ExtrCen, sv_ValPol)
+    print(paste("Intersection features:", nrow(inter)))
+  } else {
+    print("One of the inputs is empty")
+  }
+  
+  #Get the true positives
+  plot$TP <- terra::intersect(sv_ExtrCen, sv_ValPol)%>%
+    # writeVector(dir_TP, overwrite = TRUE) %>%
+    perim()%>%
+    sum()
+  #Get the false positives
+  plot$FP <- terra::erase(sv_ExtrCen, sv_ValPol)%>%
+    # writeVector(dir_FP, overwrite = TRUE)%>%
+    perim()%>%
+    sum()
+  
+  #Get the false negatives
+  plot$FN <- terra::erase(sv_ValCen, sv_ExtrPol)%>%
+    #writeVector(dir_FN, overwrite = TRUE)%>%
+    perim()%>%
+    sum()
+  
+  #Combine the values together in rows
+  #df_Confusion <- tibble(Plot, TP, FP, FN)
+  
+  
+  return(plot)
+  
+}
+
+#####17) MosaicMaker
+#Function that takes in a spatvector and makes a mosaic from it 
+
+MosaicMaker <- function(spatVector, gridSize, overlap){
+  #This function takes in a large spatvector, and retiles it with overlap. 
+  #The eventual tilesize is gridsize + overlap
+  library(terra)
+  library(tidyverse)
+    #Create a grid based on the input spatvector
+    grid <- gridMaker(spatVector, gridSize)
+    
+    #Create the tiles using the function RasterTiler
+    sub_tiles <- RasterTiler(grid, grid, 
+                             dir = "temp", 
+                             rm = TRUE)
+    
+    #Create Polygons from the sub_tiles
+    sub_polygons <- map(sub_tiles, 
+                        ~as.polygons(.x))
+    
+    #Create a buffer around the sub_polygons
+    buffer_polygons <- map(sub_polygons, 
+                           ~buffer(.x, 
+                                   overlap,
+                                   joinstyle = "mitre"))
+    
+    #Divide the large vector into subtiles
+    TilesVector <- map(buffer_polygons, 
+                         ~crop(spatVector,
+                               .x))
+    
+    return(TilesVector)
+    
 }
 

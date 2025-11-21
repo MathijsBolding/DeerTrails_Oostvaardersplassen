@@ -70,7 +70,7 @@ def main():
     output_folder = sys.argv[2]
     branch_length = 1
     extend = True
-    densify_distance = 0.2
+    densify_distance = 0.1
     # Get all files to process
     files = [entry.path for entry in os.scandir(directory) if entry.is_file()]
 

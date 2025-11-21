@@ -31,11 +31,16 @@ find "$input_folder" -type d -path '*/extr' | while read -r folder; do
 	
         pol_folder="$parent_folder/pol"
         cen_folder="$parent_folder/cen"
+        TP_folder="$parent_folder/TP"
+	FP_folder="$parent_folder/FP"
+	FN_folder="$parent_folder/FN"
 	
 	mkdir -p "$pol_folder"
   	mkdir -p "$cen_folder"
+  	mkdir -p "$TP_folder"
+  	mkdir -p "$FP_folder"
+  	mkdir -p "$FN_folder"
   	 
-
 	# Check if input folder exists
 	if [ ! -d "$input_folder" ]; then
 	    echo "Error: Input folder '$input_folder' does not exist."

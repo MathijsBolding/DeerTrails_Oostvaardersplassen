@@ -13,15 +13,16 @@ args <- commandArgs(trailingOnly = TRUE)
 
 #Set the location of the extracted trails 
 files_DeerGeese <- list.files(args[1],
-                              full.names = TRUE)
-
+                              full.names = TRUE,
+                              pattern = ".xyz")
 output_DeerGeese <- args[2]
-
 
 #Convert the xyz files to gpkg's 
 #For the deergeese
 walk(files_DeerGeese, ~GeoConverter(fun = xyz2rast, 
                                dir = .x, 
+                               ValueField = NULL,
                                polygonize = TRUE,
+                               CropSize = 50,
                                save_dir = output_DeerGeese))
 
